@@ -327,7 +327,7 @@ function done(msg) {
 function save() {
   const arr = Object.values(basket);
   if (!arr.length) return;
-  const itemsStr = arr.map(b => b.sku + "|" + b.qty).join(";");
+  const itemsStr = arr.map(b => b.sku + "|" + b.qty).join(",");
   const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
   if (!WEBHOOK || !user) {
     toast("Preview only — would send: " + itemsStr);
