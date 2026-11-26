@@ -15,12 +15,17 @@
   --card:var(--tg-theme-secondary-bg-color,#f1f3f5);
   --line:rgba(128,128,128,.25);
   --err:#d93025;
+  --ok:#1e9e55;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--fg);
   font:16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 14px 8px;border-bottom:1px solid var(--line)}
-h1{font-size:18px;margin:0 0 10px}
+.bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+h1{font-size:18px;margin:0}
+#done{border:0;border-radius:999px;background:var(--btn);color:var(--btn-fg);padding:8px 14px 8px 16px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+#done:disabled{opacity:.4}
+#done .bd{min-width:22px;height:22px;border-radius:11px;background:var(--btn-fg);color:var(--btn);font-size:13px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
 .search{position:relative}
 .search input{width:100%;padding:12px 40px 12px 14px;border:0;border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;outline:none}
 .search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--hint);font-size:20px;padding:6px 10px;display:none}
@@ -36,6 +41,7 @@ li .t{flex:1;min-width:0}
 li .n{font-weight:600;overflow:hidden;text-overflow:ellipsis}
 li .m{color:var(--hint);font-size:13px;margin-top:2px}
 li .go{color:var(--hint);font-size:22px}
+li .inb{background:var(--ok);color:#fff;border-radius:999px;font-size:13px;font-weight:600;padding:4px 10px;white-space:nowrap}
 mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
 .status{padding:40px 20px;text-align:center;color:var(--hint)}
 .status button{margin-top:12px;border:0;border-radius:10px;background:var(--btn);color:var(--btn-fg);padding:10px 18px;font-size:15px}
@@ -43,13 +49,13 @@ mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
 @keyframes sh{to{background-position:-200% 0}}
 #shade{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 #shade.on{opacity:1;pointer-events:auto}
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--bg);border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));
-  transform:translateY(105%);transition:transform .22s ease;box-shadow:0 -6px 24px rgba(0,0,0,.18)}
-#sheet.on{transform:none}
-#sheet .top{display:flex;justify-content:space-between;gap:12px}
-#sName{font-size:19px;font-weight:700}
-#sMeta{color:var(--hint);font-size:14px;margin-top:2px}
-#x{border:0;background:var(--card);color:var(--hint);width:32px;height:32px;border-radius:50%;font-size:16px;flex:0 0 auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--bg);border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:transform .22s ease;box-shadow:0 -6px 24px rgba(0,0,0,.18);max-height:85vh;overflow:auto}
+.sheet.on{transform:none}
+.sheet .top{display:flex;justify-content:space-between;gap:12px}
+.sheet h2{font-size:19px;margin:0}
+.sub{color:var(--hint);font-size:14px;margin-top:2px}
+.xb{border:0;background:var(--card);color:var(--hint);width:32px;height:32px;border-radius:50%;font-size:16px;flex:0 0 auto}
 .stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 6px}
 .stepper button{width:52px;height:52px;border:0;border-radius:14px;background:var(--card);color:var(--fg);font-size:26px}
 .stepper button:active{transform:scale(.95)}
@@ -57,14 +63,27 @@ mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
 #qty{width:110px;text-align:center;font-size:30px;font-weight:700;border:0;border-bottom:2px solid var(--btn);background:none;color:var(--fg);outline:none;padding:2px}
 #uom{color:var(--hint);font-size:14px;margin-top:4px}
 #err{min-height:20px;margin:8px 0 4px;text-align:center;color:var(--err);font-size:14px}
-#add{width:100%;border:0;border-radius:14px;background:var(--btn);color:var(--btn-fg);font-size:17px;font-weight:600;padding:15px}
-#add:disabled{opacity:.5}
-#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;display:none;max-width:90%}
+.primary{width:100%;border:0;border-radius:14px;background:var(--btn);color:var(--btn-fg);font-size:17px;font-weight:600;padding:15px}
+.primary:disabled{opacity:.5}
+#rm{display:none;width:100%;border:0;background:none;color:var(--err);font-size:15px;padding:12px 0 0}
+.ritem{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ritem .t{flex:1;min-width:0}
+.ritem .n{font-weight:600}
+.ritem .q2{font-weight:700;white-space:nowrap}
+.ritem .xb{width:30px;height:30px;font-size:14px}
+#rlist{margin:12px 0 16px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;display:none;max-width:90%;text-align:center}
+#okscr{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+#okscr .ic{width:84px;height:84px;border-radius:50%;background:var(--ok);color:#fff;font-size:44px;display:flex;align-items:center;justify-content:center}
+#okscr .tx{font-size:20px;font-weight:700}
 </style>
 </head>
 <body>
 <header>
-  <h1>📦 Add stock</h1>
+  <div class="bar">
+    <h1>📦 Add stock</h1>
+    <button id="done" disabled>Done <span class="bd" id="dn">0</span></button>
+  </div>
   <div class="search">
     <input id="q" type="search" placeholder="Search item, category or SKU…" autocomplete="off" enterkeyhint="search">
     <button id="clr" aria-label="Clear">✕</button>
@@ -75,10 +94,11 @@ mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
 <div id="body"></div>
 
 <div id="shade"></div>
-<div id="sheet" role="dialog" aria-modal="true">
+
+<div id="sheet" class="sheet" role="dialog" aria-modal="true">
   <div class="top">
-    <div><div id="sName"></div><div id="sMeta"></div></div>
-    <button id="x" aria-label="Close">✕</button>
+    <div><h2 id="sName"></h2><div class="sub" id="sMeta"></div></div>
+    <button class="xb" id="x" aria-label="Close">✕</button>
   </div>
   <div class="stepper">
     <button id="minus" aria-label="Less">−</button>
@@ -86,21 +106,37 @@ mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
     <button id="plus" aria-label="More">+</button>
   </div>
   <div id="err"></div>
-  <button id="add">Add</button>
+  <button class="primary" id="add">Add to list</button>
+  <button id="rm">Remove from list</button>
 </div>
+
+<div id="review" class="sheet" role="dialog" aria-modal="true">
+  <div class="top">
+    <div><h2>Review &amp; save</h2><div class="sub" id="rsub"></div></div>
+    <button class="xb" id="rx" aria-label="Close">✕</button>
+  </div>
+  <div id="rlist"></div>
+  <div id="rerr" style="min-height:20px;margin:0 0 8px;text-align:center;color:var(--err);font-size:14px"></div>
+  <button class="primary" id="save">Save</button>
+</div>
+
+<div id="okscr"><div class="ic">✓</div><div class="tx" id="oktx">Saved</div></div>
 <div id="toast"></div>
 
 <script>
 // ===== CONFIG =====
 const API = "https://script.google.com/macros/s/AKfycbwGOsJEkFauXz7oMqcxyu_9K3fYoBRA2KpAZ3LjgC2EYbVqFmNtu4a4BAFtRP78dKOq/exec?action=items";
+// Paste your Make "Custom webhook" URL here.
+const WEBHOOK = "";
 const CACHE_KEY = "foodgle_items_v1";
+const BASKET_KEY = "foodgle_basket_v1";
 // ==================
 
 const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
 const $ = s => document.querySelector(s);
-let items = [], cat = "All", sel = null;
+let items = [], cat = "All", sel = null, basket = {};
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function hl(text, tokens) {
@@ -120,10 +156,22 @@ function hl(text, tokens) {
   return open ? out + "</mark>" : out;
 }
 function haptic(kind) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(kind || "light"); } catch (e) {} }
-function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2600); }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 2400); }
+const fmt = n => String(Math.round(n * 100) / 100);
 
+// ----- basket -----
+function loadBasket() { try { basket = JSON.parse(localStorage.getItem(BASKET_KEY) || "{}") || {}; } catch (e) { basket = {}; } }
+function saveBasket() { try { localStorage.setItem(BASKET_KEY, JSON.stringify(basket)); } catch (e) {} }
+function basketCount() { return Object.keys(basket).length; }
+function updateDone() {
+  const n = basketCount();
+  $("#dn").textContent = n;
+  $("#done").disabled = n === 0;
+  try { if (tg) { n ? tg.enableClosingConfirmation() : tg.disableClosingConfirmation(); } } catch (e) {}
+}
+
+// ----- list -----
 function tokens() { return $("#q").value.trim().toLowerCase().split(/\s+/).filter(Boolean); }
-
 function visible() {
   const tk = tokens();
   const list = items.filter(it =>
@@ -136,7 +184,6 @@ function visible() {
   });
   return { list, tk };
 }
-
 function renderChips() {
   const cats = ["All", ...Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort()];
   const box = $("#chips");
@@ -150,7 +197,6 @@ function renderChips() {
     box.appendChild(b);
   });
 }
-
 function render() {
   const { list, tk } = visible();
   $("#clr").style.display = $("#q").value ? "block" : "none";
@@ -163,26 +209,21 @@ function render() {
   const ul = document.createElement("ul");
   list.forEach(it => {
     const li = document.createElement("li");
+    const inb = basket[it.sku];
     li.innerHTML = '<div class="t"><div class="n">' + hl(it.name, tk) + '</div><div class="m">' +
-      hl([it.category, it.uom].filter(Boolean).join(" · "), tk) + '</div></div><div class="go">›</div>';
+      hl([it.category, it.uom].filter(Boolean).join(" · "), tk) + '</div></div>' +
+      (inb ? '<div class="inb">✓ ' + esc(fmt(inb.qty)) + ' ' + esc(inb.uom) + '</div>' : '<div class="go">›</div>');
     li.onclick = () => openSheet(it);
     ul.appendChild(li);
   });
   body.innerHTML = "";
   body.appendChild(ul);
 }
-
 function skeleton() {
   $("#body").innerHTML = '<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>';
   $("#count").textContent = "";
 }
-
-function setItems(data) {
-  items = data;
-  renderChips();
-  render();
-}
-
+function setItems(data) { items = data; renderChips(); render(); }
 async function load() {
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
@@ -203,21 +244,28 @@ async function load() {
   }
 }
 
-// ----- quantity sheet -----
+// ----- sheets -----
+function showSheet(id) { $("#shade").classList.add("on"); $(id).classList.add("on"); }
+function closeAll() {
+  $("#shade").classList.remove("on");
+  $("#sheet").classList.remove("on");
+  $("#review").classList.remove("on");
+  sel = null;
+}
 function openSheet(it) {
   sel = it;
+  const inb = basket[it.sku];
   $("#sName").textContent = it.name;
   $("#sMeta").textContent = [it.category, it.sku].filter(Boolean).join(" · ");
   $("#uom").textContent = it.uom || "";
-  $("#qty").value = "1";
+  $("#qty").value = inb ? fmt(inb.qty) : "1";
   $("#qty").inputMode = it.float ? "decimal" : "numeric";
   $("#err").textContent = "";
-  $("#add").disabled = false;
-  $("#shade").classList.add("on");
-  $("#sheet").classList.add("on");
+  $("#add").textContent = inb ? "Update list" : "Add to list";
+  $("#rm").style.display = inb ? "block" : "none";
+  showSheet("#sheet");
   haptic("light");
 }
-function closeSheet() { $("#shade").classList.remove("on"); $("#sheet").classList.remove("on"); sel = null; }
 function parseQty() { return Number(String($("#qty").value).trim().replace(",", ".")); }
 function step(d) {
   const inc = sel && sel.float ? 0.5 : 1;
@@ -227,28 +275,95 @@ function step(d) {
   $("#err").textContent = "";
   haptic("light");
 }
-function submit() {
+function addToList() {
   if (!sel) return;
   const n = parseQty();
   if (!Number.isFinite(n) || n <= 0) { $("#err").textContent = "Enter a quantity above 0."; return; }
   if (!sel.float && !Number.isInteger(n)) { $("#err").textContent = "This item is counted in whole numbers only."; return; }
-  const data = "add|" + sel.sku + "|" + n;
-  $("#add").disabled = true;
+  basket[sel.sku] = { sku: sel.sku, name: sel.name, uom: sel.uom || "", float: !!sel.float, qty: n };
+  saveBasket(); updateDone(); haptic("medium");
+  const nm = sel.name;
+  closeAll(); render();
+  toast("Added " + fmt(n) + " × " + nm);
+}
+function removeFromList(sku) {
+  delete basket[sku];
+  saveBasket(); updateDone(); render();
+}
+
+// ----- review & save -----
+function openReview() {
+  const arr = Object.values(basket);
+  if (!arr.length) return;
+  $("#toast").style.display = "none";
+  $("#rsub").textContent = arr.length + (arr.length === 1 ? " item" : " items") + " will be added to stock";
+  const box = $("#rlist");
+  box.innerHTML = "";
+  arr.forEach(b => {
+    const row = document.createElement("div");
+    row.className = "ritem";
+    row.innerHTML = '<div class="t"><div class="n">' + esc(b.name) + '</div></div><div class="q2">+' + esc(fmt(b.qty)) + ' ' + esc(b.uom) + '</div>';
+    const x = document.createElement("button");
+    x.className = "xb"; x.textContent = "✕"; x.setAttribute("aria-label", "Remove " + b.name);
+    x.onclick = () => {
+      removeFromList(b.sku);
+      if (!basketCount()) closeAll(); else openReview();
+    };
+    row.appendChild(x);
+    box.appendChild(row);
+  });
+  $("#rerr").textContent = "";
+  $("#save").disabled = false;
+  $("#save").textContent = "Save " + arr.length + (arr.length === 1 ? " item" : " items");
+  closeAll();
+  showSheet("#review");
+}
+function done(msg) {
+  $("#oktx").textContent = msg;
+  $("#okscr").style.display = "flex";
   haptic("medium");
-  if (tg && tg.initData) { tg.sendData(data); }
-  else { toast("Preview only — would send: " + data); $("#add").disabled = false; }
+  setTimeout(() => { try { tg && tg.close(); } catch (e) {} }, 1100);
+}
+function save() {
+  const arr = Object.values(basket);
+  if (!arr.length) return;
+  const itemsStr = arr.map(b => b.sku + "|" + b.qty).join(";");
+  const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (!WEBHOOK || !user) {
+    toast("Preview only — would send: " + itemsStr);
+    return;
+  }
+  $("#save").disabled = true;
+  $("#save").textContent = "Saving…";
+  fetch(WEBHOOK, {
+    method: "POST", mode: "no-cors",
+    body: new URLSearchParams({ chat: String(user.id), name: user.first_name || "", items: itemsStr })
+  }).then(() => {
+    basket = {}; saveBasket(); updateDone();
+    done("Saved " + arr.length + (arr.length === 1 ? " item" : " items"));
+  }).catch(() => {
+    $("#rerr").textContent = "Couldn’t save. Check your connection and try again.";
+    $("#save").disabled = false;
+    $("#save").textContent = "Try again";
+  });
 }
 
 $("#q").addEventListener("input", render);
 $("#clr").onclick = () => { $("#q").value = ""; render(); $("#q").focus(); };
-$("#shade").onclick = closeSheet;
-$("#x").onclick = closeSheet;
+$("#shade").onclick = closeAll;
+$("#x").onclick = closeAll;
+$("#rx").onclick = closeAll;
 $("#minus").onclick = () => step(-1);
 $("#plus").onclick = () => step(1);
 $("#qty").addEventListener("input", () => $("#err").textContent = "");
-$("#qty").addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
-$("#add").onclick = submit;
+$("#qty").addEventListener("keydown", e => { if (e.key === "Enter") addToList(); });
+$("#add").onclick = addToList;
+$("#rm").onclick = () => { if (sel) { removeFromList(sel.sku); closeAll(); toast("Removed"); } };
+$("#done").onclick = openReview;
+$("#save").onclick = save;
 
+loadBasket();
+updateDone();
 load();
 </script>
 </body>
