@@ -328,14 +328,23 @@ function save() {
   const arr = Object.values(basket);
   if (!arr.length) return;
   const itemsStr = arr.map(b => b.sku + "|" + b.qty).join(",");
+  // Who is saving? Prefer Telegram's own user; fall back to ?chat= in the page URL
+  // (the bot puts the chat id into the keyboard button's URL).
   const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
-  if (!WEBHOOK || !user) {
-    toast("Preview only — would send: " + itemsStr);
+  const qp = new URLSearchParams(location.search);
+  const chatId = (user && user.id) ? String(user.id) : (qp.get("chat") || "");
+  const who = (user && user.first_name) || qp.get("name") || "";
+  if (!WEBHOOK) {
+    toast("Not saved: the page has no webhook URL (old add.html on GitHub?)");
+    return;
+  }
+  if (!chatId) {
+    toast("Not saved: no chat id. Add ?chat={{chat id}} to the button URL in the bot menu.");
     return;
   }
   $("#save").disabled = true;
   $("#save").textContent = "Saving…";
-  const qs = new URLSearchParams({ chat: String(user.id), name: user.first_name || "", items: itemsStr }).toString();
+  const qs = new URLSearchParams({ chat: chatId, name: who, items: itemsStr }).toString();
   fetch(WEBHOOK + (WEBHOOK.indexOf("?") > -1 ? "&" : "?") + qs, { mode: "no-cors" }).then(() => {
     basket = {}; saveBasket(); updateDone();
     done("Saved " + arr.length + (arr.length === 1 ? " item" : " items"));
