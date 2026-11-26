@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Add stock</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#ffffff);
+  --fg:var(--tg-theme-text-color,#111111);
+  --hint:var(--tg-theme-hint-color,#707579);
+  --btn:var(--tg-theme-button-color,#2481cc);
+  --btn-fg:var(--tg-theme-button-text-color,#ffffff);
+  --card:var(--tg-theme-secondary-bg-color,#f1f3f5);
+  --line:rgba(128,128,128,.25);
+  --err:#d93025;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 0 10px}
+.search{position:relative}
+.search input{width:100%;padding:12px 40px 12px 14px;border:0;border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;outline:none}
+.search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--hint);font-size:20px;padding:6px 10px;display:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:0;border-radius:999px;padding:7px 14px;background:var(--card);color:var(--fg);font-size:14px}
+.chip.on{background:var(--btn);color:var(--btn-fg)}
+.count{padding:10px 16px 4px;color:var(--hint);font-size:13px}
+ul{list-style:none;margin:0;padding:0 0 40px}
+li{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+li:active{background:var(--card)}
+li .t{flex:1;min-width:0}
+li .n{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+li .m{color:var(--hint);font-size:13px;margin-top:2px}
+li .go{color:var(--hint);font-size:22px}
+mark{background:rgba(255,214,0,.45);color:inherit;border-radius:3px}
+.status{padding:40px 20px;text-align:center;color:var(--hint)}
+.status button{margin-top:12px;border:0;border-radius:10px;background:var(--btn);color:var(--btn-fg);padding:10px 18px;font-size:15px}
+.sk{height:52px;margin:10px 16px;border-radius:12px;background:linear-gradient(90deg,var(--card) 25%,rgba(128,128,128,.18) 50%,var(--card) 75%);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+#shade{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+#shade.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--bg);border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:transform .22s ease;box-shadow:0 -6px 24px rgba(0,0,0,.18)}
+#sheet.on{transform:none}
+#sheet .top{display:flex;justify-content:space-between;gap:12px}
+#sName{font-size:19px;font-weight:700}
+#sMeta{color:var(--hint);font-size:14px;margin-top:2px}
+#x{border:0;background:var(--card);color:var(--hint);width:32px;height:32px;border-radius:50%;font-size:16px;flex:0 0 auto}
+.stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 6px}
+.stepper button{width:52px;height:52px;border:0;border-radius:14px;background:var(--card);color:var(--fg);font-size:26px}
+.stepper button:active{transform:scale(.95)}
+.q{display:flex;flex-direction:column;align-items:center}
+#qty{width:110px;text-align:center;font-size:30px;font-weight:700;border:0;border-bottom:2px solid var(--btn);background:none;color:var(--fg);outline:none;padding:2px}
+#uom{color:var(--hint);font-size:14px;margin-top:4px}
+#err{min-height:20px;margin:8px 0 4px;text-align:center;color:var(--err);font-size:14px}
+#add{width:100%;border:0;border-radius:14px;background:var(--btn);color:var(--btn-fg);font-size:17px;font-weight:600;padding:15px}
+#add:disabled{opacity:.5}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;display:none;max-width:90%}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 Add stock</h1>
+  <div class="search">
+    <input id="q" type="search" placeholder="Search item, category or SKU…" autocomplete="off" enterkeyhint="search">
+    <button id="clr" aria-label="Clear">✕</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+<div class="count" id="count"></div>
+<div id="body"></div>
+
+<div id="shade"></div>
+<div id="sheet" role="dialog" aria-modal="true">
+  <div class="top">
+    <div><div id="sName"></div><div id="sMeta"></div></div>
+    <button id="x" aria-label="Close">✕</button>
+  </div>
+  <div class="stepper">
+    <button id="minus" aria-label="Less">−</button>
+    <div class="q"><input id="qty" inputmode="decimal" autocomplete="off" value="1"><div id="uom"></div></div>
+    <button id="plus" aria-label="More">+</button>
+  </div>
+  <div id="err"></div>
+  <button id="add">Add</button>
+</div>
+<div id="toast"></div>
+
+<script>
+// ===== CONFIG =====
+const API = "https://script.google.com/macros/s/AKfycbwGOsJEkFauXz7oMqcxyu_9K3fYoBRA2KpAZ3LjgC2EYbVqFmNtu4a4BAFtRP78dKOq/exec?action=items";
+const CACHE_KEY = "foodgle_items_v1";
+// ==================
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+const $ = s => document.querySelector(s);
+let items = [], cat = "All", sel = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function hl(text, tokens) {
+  text = String(text);
+  const low = text.toLowerCase(), mark = new Array(text.length).fill(false);
+  tokens.forEach(t => {
+    if (!t) return;
+    let i = low.indexOf(t);
+    while (i > -1) { for (let k = i; k < i + t.length; k++) mark[k] = true; i = low.indexOf(t, i + t.length); }
+  });
+  let out = "", open = false;
+  for (let i = 0; i < text.length; i++) {
+    if (mark[i] && !open) { out += "<mark>"; open = true; }
+    if (!mark[i] && open) { out += "</mark>"; open = false; }
+    out += esc(text[i]);
+  }
+  return open ? out + "</mark>" : out;
+}
+function haptic(kind) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(kind || "light"); } catch (e) {} }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2600); }
+
+function tokens() { return $("#q").value.trim().toLowerCase().split(/\s+/).filter(Boolean); }
+
+function visible() {
+  const tk = tokens();
+  const list = items.filter(it =>
+    (cat === "All" || it.category === cat) &&
+    tk.every(t => (it.name + " " + it.category + " " + it.sku).toLowerCase().includes(t)));
+  const q = tk[0] || "";
+  list.sort((a, b) => {
+    const as = a.name.toLowerCase().startsWith(q) ? 0 : 1, bs = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+    return as - bs || a.name.localeCompare(b.name);
+  });
+  return { list, tk };
+}
+
+function renderChips() {
+  const cats = ["All", ...Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort()];
+  const box = $("#chips");
+  box.innerHTML = "";
+  if (cats.length < 3) return;
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip" + (c === cat ? " on" : "");
+    b.textContent = c;
+    b.onclick = () => { cat = c; renderChips(); render(); };
+    box.appendChild(b);
+  });
+}
+
+function render() {
+  const { list, tk } = visible();
+  $("#clr").style.display = $("#q").value ? "block" : "none";
+  $("#count").textContent = list.length + (list.length === 1 ? " item" : " items");
+  const body = $("#body");
+  if (!list.length) {
+    body.innerHTML = '<div class="status">No item matches “' + esc($("#q").value) + '”.<br>Try a shorter word.</div>';
+    return;
+  }
+  const ul = document.createElement("ul");
+  list.forEach(it => {
+    const li = document.createElement("li");
+    li.innerHTML = '<div class="t"><div class="n">' + hl(it.name, tk) + '</div><div class="m">' +
+      hl([it.category, it.uom].filter(Boolean).join(" · "), tk) + '</div></div><div class="go">›</div>';
+    li.onclick = () => openSheet(it);
+    ul.appendChild(li);
+  });
+  body.innerHTML = "";
+  body.appendChild(ul);
+}
+
+function skeleton() {
+  $("#body").innerHTML = '<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>';
+  $("#count").textContent = "";
+}
+
+function setItems(data) {
+  items = data;
+  renderChips();
+  render();
+}
+
+async function load() {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
+  if (cached && cached.length) setItems(cached); else skeleton();
+  try {
+    const res = await fetch(API, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error("Bad data");
+    setItems(data);
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+  } catch (e) {
+    if (!items.length) {
+      $("#count").textContent = "";
+      $("#body").innerHTML = '<div class="status">Couldn’t load the item list.<br><button id="retry">Try again</button></div>';
+      $("#retry").onclick = load;
+    }
+  }
+}
+
+// ----- quantity sheet -----
+function openSheet(it) {
+  sel = it;
+  $("#sName").textContent = it.name;
+  $("#sMeta").textContent = [it.category, it.sku].filter(Boolean).join(" · ");
+  $("#uom").textContent = it.uom || "";
+  $("#qty").value = "1";
+  $("#qty").inputMode = it.float ? "decimal" : "numeric";
+  $("#err").textContent = "";
+  $("#add").disabled = false;
+  $("#shade").classList.add("on");
+  $("#sheet").classList.add("on");
+  haptic("light");
+}
+function closeSheet() { $("#shade").classList.remove("on"); $("#sheet").classList.remove("on"); sel = null; }
+function parseQty() { return Number(String($("#qty").value).trim().replace(",", ".")); }
+function step(d) {
+  const inc = sel && sel.float ? 0.5 : 1;
+  let n = parseQty(); if (!Number.isFinite(n)) n = 0;
+  n = Math.max(0, Math.round((n + d * inc) * 100) / 100);
+  $("#qty").value = String(n);
+  $("#err").textContent = "";
+  haptic("light");
+}
+function submit() {
+  if (!sel) return;
+  const n = parseQty();
+  if (!Number.isFinite(n) || n <= 0) { $("#err").textContent = "Enter a quantity above 0."; return; }
+  if (!sel.float && !Number.isInteger(n)) { $("#err").textContent = "This item is counted in whole numbers only."; return; }
+  const data = "add|" + sel.sku + "|" + n;
+  $("#add").disabled = true;
+  haptic("medium");
+  if (tg && tg.initData) { tg.sendData(data); }
+  else { toast("Preview only — would send: " + data); $("#add").disabled = false; }
+}
+
+$("#q").addEventListener("input", render);
+$("#clr").onclick = () => { $("#q").value = ""; render(); $("#q").focus(); };
+$("#shade").onclick = closeSheet;
+$("#x").onclick = closeSheet;
+$("#minus").onclick = () => step(-1);
+$("#plus").onclick = () => step(1);
+$("#qty").addEventListener("input", () => $("#err").textContent = "");
+$("#qty").addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+$("#add").onclick = submit;
+
+load();
+</script>
+</body>
+</html>
