@@ -335,10 +335,8 @@ function save() {
   }
   $("#save").disabled = true;
   $("#save").textContent = "Saving…";
-  fetch(WEBHOOK, {
-    method: "POST", mode: "no-cors",
-    body: new URLSearchParams({ chat: String(user.id), name: user.first_name || "", items: itemsStr })
-  }).then(() => {
+  const qs = new URLSearchParams({ chat: String(user.id), name: user.first_name || "", items: itemsStr }).toString();
+  fetch(WEBHOOK + (WEBHOOK.indexOf("?") > -1 ? "&" : "?") + qs, { mode: "no-cors" }).then(() => {
     basket = {}; saveBasket(); updateDone();
     done("Saved " + arr.length + (arr.length === 1 ? " item" : " items"));
   }).catch(() => {
